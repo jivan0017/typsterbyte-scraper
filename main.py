@@ -113,18 +113,143 @@ async def scrapper():
         'table': soup
     } 
 
-@app.get('/test-wplay')
-async def wplay():
-    print("test")
-    url = "https://apuestas.wplay.co/es/t/19311/Colombia-Primera-A"
-    page2 = urlopen(url).read().decode('utf8')
+@app.get('/extract-info-by-league')
+async def extract_info_by_league():
     
-    soup = BeautifulSoup(page2)
+    utilidades_global = UtilitiesMontecarlo()
+    fecha_actual = datetime.now()
+    url_liga_betplay_jornadas = platforms["resultados-futbol"][0]
     
+    print("arr liga bet play jornadas:; ", url_liga_betplay_jornadas)
+    print("json.dumps ::::::::::::::::::::::::::", url_liga_betplay_jornadas["url_liga_colombia"])
     
-    # TODO: descomentar esto
-    tabla = soup.find("table")
-    rows = tabla.find_all('tr')    
+    url0_finalizacion = "https://www.resultados-futbol.com/finalizacion_colombia2023/grupo1/calendario"
+    page0 = urlopen(url0_finalizacion).read()
+    soup0 = BeautifulSoup(page0)
+    
+    # adding 2 seconds time delay
+    time.sleep(2)
+    tabla0 = soup0.select(".boxhome-2col")
+    
+    arr_aplazados = []
+    arr_contenido_partidos = []
+    arr_jornadas_content = []
+    
+    # Recorriendo todos los partidos por jornadas de una temporada (semestre)
+    for table in tabla0:         
+         
+        jornada = table.find_all("span", class_="titlebox") 
+        jornada = jornada[0].text
+        rows    = table.select('table tr')
+         
+        for row in rows:
+            
+            # ANCHOR - Obteniendo los nombres de los equipos
+            equipos = row.find_all("img")
+            
+            if len(equipos) > 0:
+                equipo_1 = equipos[0]
+                equipo_1 = equipo_1.get("alt")                
+                equipo_2 = equipos[1]
+                equipo_2 = equipo_2.get("alt")
+        
+            
+            # validar partido aplazado
+            posible_partido_aplazado = row.select("td.rstd")
+            
+            # posible marcador/fecha partido
+            contenido_partido = row.select("td.rstd :not(span)")
+            
+            # fecha del partido
+            fecha_corta_partido = row.select("td.fecha")
+
+            # fecha & hora
+            fecha_hora_partido = row.select("td.rstd span.dtstart")
+            
+            if len(fecha_hora_partido) > 0:
+                fecha_hora_partido = fecha_hora_partido[0].text
+                
+                if fecha_hora_partido is not None:
+                    particion_fecha_partido = fecha_hora_partido.split("T")
+                    
+                    if len(particion_fecha_partido) > 0:
+                        fecha_hora_partido = particion_fecha_partido[0].strip() + " " + particion_fecha_partido[1].strip()                    
+                            
+                        fecha_p = datetime.strptime(fecha_hora_partido, '%Y-%m-%d %H:%M:%S')
+                        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", type(fecha_p))
+                        print("---------------------------- ", " ahora: ",type(fecha_actual))
+                        print("::::::::::::::::::::::::::::", (fecha_p - fecha_actual))
+            
+            if len(fecha_corta_partido) > 0:
+                print(fecha_corta_partido)
+                fecha_corta_partido = fecha_corta_partido[0].text
+
+
+            # ANCHOR Validación del contenido del partido
+            if len(contenido_partido) > 0:
+
+                # ANCHOR Validación de partidos aplazados
+                if len(posible_partido_aplazado) > 0:
+                    
+                    cadena_texto_val_partido = posible_partido_aplazado[0].text.strip('\n')
+                    cadena_texto_val_partido = cadena_texto_val_partido.strip('\t')                
+
+                    arr_aplazados.append({
+                        'aplazado': cadena_texto_val_partido,
+                        'coincidencia': 'Apl' in cadena_texto_val_partido
+                    })
+
+                
+                # ANCHOR - Validar que el partido ya haya pasado
+                contenido_a_evaluar = contenido_partido[0].text
+                contenido_a_evaluar = contenido_a_evaluar.strip()
+                
+                goles_equipo_1 = ''
+                goles_equipo_2 = ''
+                
+                if "-" or ":" in contenido_a_evaluar:
+                    # test
+                    if "-" in contenido_a_evaluar:
+                        contenido_a_evaluar = contenido_a_evaluar.split("-")
+                        goles_equipo_1 = contenido_a_evaluar[0].strip()
+                        goles_equipo_2 = contenido_a_evaluar[1].strip()
+                        
+                    elif ":" in contenido_a_evaluar:
+                        contenido_a_evaluar = contenido_a_evaluar.split(":")
+                        goles_equipo_1 = "x"
+                        goles_equipo_2 = "x"
+                        
+                    detalle_partido_jornada = {
+                        'jornada'              : jornada,
+                        'fecha_corta_partido'  : fecha_corta_partido,
+                        'fecha_hora_partido'   : fecha_hora_partido,
+                        'equipo1'              : utilidades_global.retornar_cadena_sin_acento(equipo_1),
+                        'equipo2'              : utilidades_global.retornar_cadena_sin_acento(equipo_2),
+                        'contenido_partido'    : contenido_partido[0].text,
+                        'goles_equipo1'        : goles_equipo_1,
+                        'goles_equipo2'        : goles_equipo_2,
+                        'partido_aplazado_flag': cadena_texto_val_partido,
+                    }
+                    
+                    arr_contenido_partidos.append(detalle_partido_jornada)
+                    
+        # solo partidos jugados
+        if len(arr_contenido_partidos) > 0:
+            arr_jornadas_content.append(arr_contenido_partidos)
+
+        arr_contenido_partidos = []                        
+                    
+    return {
+        'about': True,
+        'success': True,
+        'retorno': 817,
+        'matches_league_path': None,
+        'position_table_league_path': None,
+        'matches': None,
+        'aplazados': arr_aplazados,
+        'partidos_por_jornada': arr_jornadas_content,
+        'tabla_posiciones': None
+    }
 
 @app.get('/scanear2')
 async def scrapper2(matches_league_path: str = None, position_table_league_path: str = None):    
@@ -413,6 +538,19 @@ async def scrapper2(matches_league_path: str = None, position_table_league_path:
 
         matches_league_for_date.append(match_date)    
  
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
     # ----------------------------------------------------------------------------------------------        
     ## tabla de posiciones:
