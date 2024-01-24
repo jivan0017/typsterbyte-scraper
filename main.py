@@ -1,11 +1,6 @@
 from fastapi import FastAPI, Request
-from database import database as connection
-from fastapi.responses import  RedirectResponse
 from requests_html import AsyncHTMLSession
 from bs4 import BeautifulSoup
-from datetime import datetime
-import requests
-from array import array
 import json
 
 # miembros propios
@@ -14,19 +9,22 @@ from utilities.utilities_montecarlo import UtilitiesMontecarlo
 
 # trabajo con fechas
 from datetime import datetime
-from datetime import timedelta
-
-# importing module
 import time
 
+
+# importing module
 from urllib.request import urlopen, Request
-
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-# from bs4 import BeautifulSoup
+
+# IMPORTS SIN USO: (testear para eliminar)
+from datetime import timedelta
+import requests
+from array import array
+from database import database as connection
+from fastapi.responses import  RedirectResponse
 import pandas as pd
 
 
@@ -74,6 +72,7 @@ def index():
         'success': True
     }
     
+# NOTE: ejemplo para reutilización de métodos ASYNC en el mismo fichero o separados    
 @app.get("/regions")
 async def regions():
     spot_countries = await get_regions_spotify(platforms["spotify"]["base_url"])
@@ -96,172 +95,10 @@ async def get_regions_spotify(url):
         }
 
     return countries    
-    
-@app.get('/scanear')
-async def scrapper():
-    print('iniciuandoles')
-    
-    session = requests.Session()
-    session.headers.update({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-    })
-    
-    resp = session.get('https://footystats.org/colombia/categoria-primera-a')
-    soup = BeautifulSoup(resp.text, "html.parser")
-    
-    data = {
-        "table": soup.select_one("#league-tables-wrapper div div.table-wrapper table")
-    }
-    
-    return {
-        'about': True,
-        'success': True,
-        'retorno': 817,
-        'table': soup
-    } 
-
-# NOTE: método de referencia NO funcional
-@app.get('/extract-info-by-league')
-async def extract_info_by_league():
-    
-    utilidades_global = UtilitiesMontecarlo()
-    fecha_actual = datetime.now()
-    url_liga_betplay_jornadas = platforms["resultados-futbol"][0]
-    
-    print("arr liga bet play jornadas:; ", url_liga_betplay_jornadas)
-    print("json.dumps ::::::::::::::::::::::::::", url_liga_betplay_jornadas["url_liga_colombia"])
-    
-    url0_finalizacion = "https://www.resultados-futbol.com/finalizacion_colombia2023/grupo1/calendario"
-    page0 = urlopen(url0_finalizacion).read()
-    soup0 = BeautifulSoup(page0)
-    
-    # adding 2 seconds time delay
-    time.sleep(2)
-    tabla0 = soup0.select(".boxhome-2col")
-    
-    arr_aplazados = []
-    arr_contenido_partidos = []
-    arr_jornadas_content = []
-    
-    # Recorriendo todos los partidos por jornadas de una temporada (semestre)
-    for table in tabla0:         
-         
-        jornada = table.find_all("span", class_="titlebox") 
-        jornada = jornada[0].text
-        rows    = table.select('table tr')
-         
-        for row in rows:
-            
-            # ANCHOR - Obteniendo los nombres de los equipos
-            equipos = row.find_all("img")
-            
-            if len(equipos) > 0:
-                equipo_1 = equipos[0]
-                equipo_1 = equipo_1.get("alt")                
-                equipo_2 = equipos[1]
-                equipo_2 = equipo_2.get("alt")
-        
-            
-            # validar partido aplazado
-            posible_partido_aplazado = row.select("td.rstd")
-            
-            # posible marcador/fecha partido
-            contenido_partido = row.select("td.rstd :not(span)")
-            
-            # fecha del partido
-            fecha_corta_partido = row.select("td.fecha")
-
-            # fecha & hora
-            fecha_hora_partido = row.select("td.rstd span.dtstart")
-            
-            if len(fecha_hora_partido) > 0:
-                fecha_hora_partido = fecha_hora_partido[0].text
-                
-                if fecha_hora_partido is not None:
-                    particion_fecha_partido = fecha_hora_partido.split("T")
-                    
-                    if len(particion_fecha_partido) > 0:
-                        fecha_hora_partido = particion_fecha_partido[0].strip() + " " + particion_fecha_partido[1].strip()                    
-                            
-                        fecha_p = datetime.strptime(fecha_hora_partido, '%Y-%m-%d %H:%M:%S')
-                        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", type(fecha_p))
-                        print("---------------------------- ", " ahora: ",type(fecha_actual))
-                        print("::::::::::::::::::::::::::::", (fecha_p - fecha_actual))
-            
-            if len(fecha_corta_partido) > 0:
-                print(fecha_corta_partido)
-                fecha_corta_partido = fecha_corta_partido[0].text
-
-
-            # ANCHOR Validación del contenido del partido
-            if len(contenido_partido) > 0:
-
-                # ANCHOR Validación de partidos aplazados
-                if len(posible_partido_aplazado) > 0:
-                    
-                    cadena_texto_val_partido = posible_partido_aplazado[0].text.strip('\n')
-                    cadena_texto_val_partido = cadena_texto_val_partido.strip('\t')                
-
-                    arr_aplazados.append({
-                        'aplazado': cadena_texto_val_partido,
-                        'coincidencia': 'Apl' in cadena_texto_val_partido
-                    })
-
-                
-                # ANCHOR - Validar que el partido ya haya pasado
-                contenido_a_evaluar = contenido_partido[0].text
-                contenido_a_evaluar = contenido_a_evaluar.strip()
-                
-                goles_equipo_1 = ''
-                goles_equipo_2 = ''
-                
-                if "-" or ":" in contenido_a_evaluar:
-                    # test
-                    if "-" in contenido_a_evaluar:
-                        contenido_a_evaluar = contenido_a_evaluar.split("-")
-                        goles_equipo_1 = contenido_a_evaluar[0].strip()
-                        goles_equipo_2 = contenido_a_evaluar[1].strip()
-                        
-                    elif ":" in contenido_a_evaluar:
-                        contenido_a_evaluar = contenido_a_evaluar.split(":")
-                        goles_equipo_1 = "x"
-                        goles_equipo_2 = "x"
-                        
-                    detalle_partido_jornada = {
-                        'jornada'              : jornada,
-                        'fecha_corta_partido'  : fecha_corta_partido,
-                        'fecha_hora_partido'   : fecha_hora_partido,
-                        'equipo1'              : utilidades_global.retornar_cadena_sin_acento(equipo_1),
-                        'equipo2'              : utilidades_global.retornar_cadena_sin_acento(equipo_2),
-                        'contenido_partido'    : contenido_partido[0].text,
-                        'goles_equipo1'        : goles_equipo_1,
-                        'goles_equipo2'        : goles_equipo_2,
-                        'partido_aplazado_flag': cadena_texto_val_partido,
-                    }
-                    
-                    arr_contenido_partidos.append(detalle_partido_jornada)
-                    
-        # solo partidos jugados
-        if len(arr_contenido_partidos) > 0:
-            arr_jornadas_content.append(arr_contenido_partidos)
-
-        arr_contenido_partidos = []                        
-                    
-    return {
-        'about': True,
-        'success': True,
-        'retorno': 817,
-        'matches_league_path': None,
-        'position_table_league_path': None,
-        'matches': None,
-        'aplazados': arr_aplazados,
-        'partidos_por_jornada': arr_jornadas_content,
-        'tabla_posiciones': None
-    }
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-calendar-league-by-league')
-async def extCalendarLeagueByLeague(matches_league_path: str = None, position_table_league_path: str = None):
+async def extCalendarLeagueByLeague(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
     fecha_actual = datetime.now()
@@ -426,7 +263,7 @@ async def extCalendarLeagueByLeague(matches_league_path: str = None, position_ta
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-position-table-by-league')
-async def extPositionTableByLeague(matches_league_path: str = None, position_table_league_path: str = None):
+async def extPositionTableByLeague(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
 
@@ -525,47 +362,57 @@ async def extPositionTableByLeague(matches_league_path: str = None, position_tab
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-next-matches-wplay-by-league')
-async def extNextMattchesWplayByLeague(matches_league_path: str = None, position_table_league_path: str = None):
+async def extNextMattchesWplayByLeague(path_to_scrape: str = None):
     
     matches_league_for_date = []    
     url = "https://apuestas.wplay.co/es/t/19311/Colombia-Primera-A"
     request_url = Request(url, headers={'User-Agent': 'XYZ/3.0'})
-    page_url_open = urlopen(request_url).read().decode('utf8')
+    exception_content = None
     
-    soup = BeautifulSoup(page_url_open)    
-    
-    # TODO: descomentar esto
-    tabla = soup.find("table")
-    rows = tabla.find_all('tr')
+    try:
+        page_url_open = urlopen(request_url).read().decode('utf8')    
+        soup = BeautifulSoup(page_url_open)    
         
-    for row in rows:
+        # TODO: descomentar esto
+        tabla = soup.find("table")
+        rows = tabla.find_all('tr')
+            
+        for row in rows:
 
-        time_hour = row.find_all("span", class_="time")
-        time_date = row.find_all("span", class_="date")
-        
-        equipo1 = row.select("td div > button > span > span.seln-label > span > span")
-        cuota_equipo = row.select("td div > button > span .price.dec")
-        # print("equipo:::::: ", equipo1[0].text, "  cuota: ", cuota_equipo[0].text, " empate.:: ", cuota_equipo[1].text)        
-        # print("equipo2:::::: ", equipo1[2].text, " cupta equipo 2: ", cuota_equipo[2].text)
-        
-        # CREANDO POR CADA PARTIDO EL OBJECTO CON LA INFO CORRESPONDIENTE
-        # TODO: pendiente validar que existan estos indices, en el mejor de los casos existen [1], [2], pero puede ser que no hayan elementos en los arraays: cuota_equipo, equipo1, etc
-        match_date = {
-            'time_match': time_hour[0].text,
-            'date_match': time_date[0].text,
-            'team_local': equipo1[0].text,
-            'quota_team_local': cuota_equipo[0].text,
-            'quota_tie': cuota_equipo[1].text,
-            'team_visiting': equipo1[2].text,
-            'quota_team_visiting': cuota_equipo[2].text
-        }
+            time_hour = row.find_all("span", class_="time")
+            time_date = row.find_all("span", class_="date")
+            
+            equipo1 = row.select("td div > button > span > span.seln-label > span > span")
+            cuota_equipo = row.select("td div > button > span .price.dec")
+            # print("equipo:::::: ", equipo1[0].text, "  cuota: ", cuota_equipo[0].text, " empate.:: ", cuota_equipo[1].text)        
+            # print("equipo2:::::: ", equipo1[2].text, " cupta equipo 2: ", cuota_equipo[2].text)
+            
+            # CREANDO POR CADA PARTIDO EL OBJECTO CON LA INFO CORRESPONDIENTE
+            # TODO: pendiente validar que existan estos indices, en el mejor de los casos existen [1], [2], pero puede ser que no hayan elementos en los arraays: cuota_equipo, equipo1, etc
+            match_date = {
+                'time_match': time_hour[0].text,
+                'date_match': time_date[0].text,
+                'team_local': equipo1[0].text,
+                'quota_team_local': cuota_equipo[0].text,
+                'quota_tie': cuota_equipo[1].text,
+                'team_visiting': equipo1[2].text,
+                'quota_team_visiting': cuota_equipo[2].text
+            }
 
-        matches_league_for_date.append(match_date)    
- 
+            matches_league_for_date.append(match_date)
+
+        status_code = 200
+      
+    except Exception as ex:    
+        status_code = 500
+        exception_content = ex
+
     return {
-        'success': True,
-        'matches_wplay': matches_league_for_date
-    }     
+        'success': status_code,
+        'matches_wplay': matches_league_for_date,
+        'param': path_to_scrape,
+        'exception': exception_content
+    }
 
 # TODO: este método vuela una vez que se testee perfectamente los métodos activos como parte del modelo
 @app.get('/scanear2')
