@@ -267,7 +267,8 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None):
 async def extPositionTableByLeague(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
-    exception_content = None
+    exception_content = ''
+    status_code = None
 
     # URL SEMILLA
     url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
@@ -361,14 +362,17 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
                 'resultados_ultimos_5_jugados': dict_ultimos_jugados,
             })
         
+        status_code = 200
     
     except Exception as ex:    
         status_code = 500
         exception_content = ex
         
     return {
+        'status_code': status_code,
         'tabla_posiciones': equipos_posicion,
-        'path_to_scrape': path_to_scrape
+        'path_to_scrape': path_to_scrape,
+        'exception_content': exception_content
     } 
 
 # NOTE: método funcional activo como parte del mecacnismo

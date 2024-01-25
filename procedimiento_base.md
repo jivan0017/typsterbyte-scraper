@@ -26,3 +26,6 @@ pip install webdriver-manager
 
 # Correr la app definida en el main.py:
 uvicorn main:app --reload
+
+- correr la app en un puerto distinto cuando tenemos ocupado el 8080, 80:
+uvicorn main:app --port 8001 --reload
