@@ -1,5 +1,6 @@
 from peewee import *
 
+# TODO: tener de referencia para posible conexión con BD
 database = MySQLDatabase(
     'laravel_survey',
     user='root',
