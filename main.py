@@ -718,7 +718,7 @@ class CalendarioLiga():
         
 
 # TODO: clase de ejemplo NO funcional
-class Scrapper():
+class Scrapper(): 
     
     def scrapedata(self, tag):
         url = f'https://quotes/toscrape/tag/{tag}'
