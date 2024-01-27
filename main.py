@@ -20,12 +20,12 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 # IMPORTS SIN USO: (testear para eliminar)
-from datetime import timedelta
-import requests
-from array import array
-from database import database as connection
-from fastapi.responses import  RedirectResponse
-import pandas as pd
+# from datetime import timedelta
+# import requests
+# from array import array
+# from database import database as connection
+# from fastapi.responses import  RedirectResponse
+# import pandas as pd
 
 
 
