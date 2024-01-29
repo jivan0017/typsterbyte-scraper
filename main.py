@@ -277,9 +277,9 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
     
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')    
     options.add_argument('--disable-dev-shm-usage')    
     equipos_posicion = []
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
