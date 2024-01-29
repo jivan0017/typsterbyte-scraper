@@ -18,6 +18,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+import platform
 
 # IMPORTS SIN USO: (testear para eliminar)
 # from datetime import timedelta
@@ -269,6 +270,8 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     utilidades_global = UtilitiesMontecarlo()
     exception_content = ''
     status_code = None
+    sistema = platform.system()
+    os_name = format(sistema)
 
     # URL SEMILLA
     url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
@@ -276,7 +279,9 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')    
+    options.add_argument('--disable-dev-shm-usage')
+    # if os_name != 'Windows':
+    options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36') if os_name != 'Windows' else None
     equipos_posicion = []
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
