@@ -69,7 +69,7 @@ platforms = {
 @app.get('/')
 def index():
     return {
-        'success': True
+        'success-last': True
     }
     
 # NOTE: ejemplo para reutilización de métodos ASYNC en el mismo fichero o separados    
