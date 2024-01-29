@@ -277,14 +277,14 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')    
+    equipos_posicion = []
     
     try:
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         # REQUERIMIENTO AL SERVIDOR
         driver.get(url)
         soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
-        lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row') 
-        equipos_posicion = []
+        lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')         
         
         for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
 
