@@ -278,9 +278,9 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')    
     equipos_posicion = []
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    try:        
         # REQUERIMIENTO AL SERVIDOR
         driver.get(url)
         soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
