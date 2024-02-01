@@ -20,6 +20,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import platform
 
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
+
 # IMPORTS SIN USO: (testear para eliminar)
 # from datetime import timedelta
 # import requests
@@ -377,7 +380,7 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
         'tabla_posiciones': equipos_posicion,
         'path_to_scrape': path_to_scrape,
         'exception_content': exception_content
-    } 
+    }
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-next-matches-wplay-by-league')

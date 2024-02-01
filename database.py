@@ -2,9 +2,9 @@ from peewee import *
 
 # TODO: tener de referencia para posible conexión con BD
 database = MySQLDatabase(
-    'laravel_survey',
-    user='root',
-    password='',
+    'tipsterbyte_main_memodevs',
+    user='tipsterbyte_main_memodevs',
+    password='--',
     host='127.0.0.1',
     port=3306
 )
