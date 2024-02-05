@@ -20,7 +20,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import platform
 
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
 
 
 # IMPORTS SIN USO: (testear para eliminar)
@@ -381,6 +381,126 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
         'path_to_scrape': path_to_scrape,
         'exception_content': exception_content
     }
+
+@app.get('/ext-position-table-by-league-experimental')
+async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
+
+    utilidades_global = UtilitiesMontecarlo()
+    exception_content = ''
+    status_code = None
+    sistema = platform.system()
+    os_name = format(sistema)
+
+    # URL SEMILLA
+    url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
+    
+    options = webdriver.ChromeOptions()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')    
+    options.add_argument('--disable-dev-shm-usage')    
+    equipos_posicion = []
+    
+    options.add_experimental_option('excludeSwitches', ['enable-logging']) 
+    service = Service(ChromeDriverManager().install()) 
+    driver = webdriver.Chrome(service=service, options=options)        
+    #driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
+    try:        
+        # REQUERIMIENTO AL SERVIDOR
+        driver.get(url)
+        soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
+        lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')         
+        
+        for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
+
+            posicion_equipo = equipo.find(class_='wff_standings_position_marker').text.lstrip().rstrip()
+            nombre_equipo = equipo.find(class_='wff_participant_name').text.lstrip().rstrip()
+            logo_equipo = equipo.find(class_='wff_flag_logo_img').get('src')
+            
+            # Grupo de estadísticas
+            estadisticas_equipo = equipo.find_all(class_='wff_standings_stats_box')
+            cantidad_estadisticas = len(estadisticas_equipo)        
+            dict_estadisticas = {}
+            contador = 0
+            
+            goles_a_favor = ''
+            goles_en_contra = ''        
+
+            # recorriendo estadísticas
+            while contador < cantidad_estadisticas:
+                est = estadisticas_equipo[contador]
+                item_dynamic = est.select_one('div > div').text
+                # dict_estadisticas[contador] = item_dynamic.strip()
+                
+                if contador == 4:
+                    goles_favor_y_contra = item_dynamic.strip().replace(" ", "")
+                    goles_favor_y_contra = goles_favor_y_contra.split('-')
+                    
+                    print("elemento #4: split ", goles_favor_y_contra)
+                    
+                    if len(goles_favor_y_contra) > 0:
+                        goles_a_favor = goles_favor_y_contra[0]
+                        goles_en_contra = goles_favor_y_contra[1]
+                    
+                    dict_estadisticas[contador] = item_dynamic.strip().replace(" ", "")
+                else:
+                    dict_estadisticas[contador] = item_dynamic.strip()            
+                
+                contador+=1        
+            
+            # grupo de últimos partidos jugados
+            ultimos_partidos_jugados_container = equipo.find(class_='wff_form')
+            ultimos_jugados_items = ultimos_partidos_jugados_container.find_all(class_='wff_form_ball')
+            cantidad_ultimos_jugados = len(ultimos_jugados_items)        
+            contador = 0
+            dict_ultimos_jugados = {}
+            
+            if cantidad_ultimos_jugados > 0:
+                operaciones_tabla = TablaPosiciones() 
+            
+            while contador < cantidad_ultimos_jugados:
+                jugado = ultimos_jugados_items[contador]            
+                item_dynamic = jugado.select_one('div.wff_label_text').text
+                item_dynamic = item_dynamic.strip()
+                
+                if item_dynamic != '?':                
+                    res_numerico = operaciones_tabla.transcribir_partidos_jugados(
+                        item_dynamic
+                    )
+                    dict_ultimos_jugados[contador] = res_numerico
+                    
+                contador+=1            
+            
+            equipos_posicion.append({
+                'nombre_equipo_acronimo':       '',
+                'nombre_equipo_full':           utilidades_global.retornar_cadena_sin_acento(nombre_equipo),
+                'url_logo_equipo':              logo_equipo,
+                'posicion':                     posicion_equipo,
+                'partidos_jugados':             dict_estadisticas[0] if dict_estadisticas[0] is not None else '',
+                'partidos_ganados':             dict_estadisticas[1] if len(dict_estadisticas) > 0 else '',
+                'partidos_empatados':           dict_estadisticas[2] if len(dict_estadisticas) > 1 else '',
+                'partidos_perdidos':            dict_estadisticas[3] if len(dict_estadisticas) > 2 else '',
+                'goles_a_favor':                goles_a_favor,
+                'goles_en_contra':              goles_en_contra,
+                'goles_diferencia':             dict_estadisticas[5] if len(dict_estadisticas) > 4 else '',
+                'puntos':                       dict_estadisticas[6] if len(dict_estadisticas) > 5 else '',
+                'resultados_ultimos_5_jugados': dict_ultimos_jugados,
+            })
+        
+        status_code = 200
+    
+    except Exception as ex:    
+        status_code = 500
+        exception_content = ex
+        
+    return {
+        'status_code': status_code,
+        'tabla_posiciones': equipos_posicion,
+        'path_to_scrape': path_to_scrape,
+        'exception_content': exception_content
+    }
+
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-next-matches-wplay-by-league')
