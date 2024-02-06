@@ -21,7 +21,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import platform
 
 
-
+import requests
 
 # IMPORTS SIN USO: (testear para eliminar)
 # from datetime import timedelta
@@ -291,7 +291,7 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
         # REQUERIMIENTO AL SERVIDOR
         driver.get(url)
         soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
-        lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')         
+        lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')
         
         for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
 
@@ -501,6 +501,147 @@ async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
         'exception_content': exception_content
     }
 
+# TODO: pendiente agregar bloques try except
+@app.get('/ext-position-table-by-league-stable')
+async def extPositionTableByLeagueStable(path_to_scrape: str = None):
+
+    utilidades_global = UtilitiesMontecarlo()
+    exception_content = ''
+    status_code = None
+    sistema = platform.system()
+    # TODO: saber si estamos en windows o Linux
+    os_name = format(sistema)
+    #equipos 
+    equipos_posicion = []
+
+    # URL SEMILLA
+    url = path_to_scrape if path_to_scrape != None else "https://www.fctables.com/colombia/liga-postobon/"
+    headers = {
+        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36"
+    }
+
+    # REQUERIMIENTO AL SERVIDOR - PARSEO DEL ARBOL CON BEAUTIFUL SOUP
+    request_url = Request(url, headers=headers)
+    page_url_open = urlopen(request_url).read().decode('utf8')    
+    soup = BeautifulSoup(page_url_open, 'html.parser')   
+    contenedor_equipos = soup.select('div.template_table table.stage-table tbody tr')
+    
+    # VALIDAR EXISTENCIA
+    if len(contenedor_equipos) > 0:
+        
+        for equipo in contenedor_equipos:
+
+            dict_ultimos_jugados      = {}
+            logo_equipo               = None
+            posicion_equipo           = None
+            puntos_equipo             = 0
+            partidos_ganados          = 0
+            partidos_empatados        = 0
+            partidos_perdidos         = 0
+            cantidad_partidos_jugados = 0
+            nombre_equipo             = 0
+            goles_a_favor             = 0
+            goles_en_contra           = 0
+            diferencia_goles          = 0
+            estadisticas_equipos_td   = equipo.find_all('td')
+            cantidad_tds              = len(estadisticas_equipos_td)
+            contador_tds              = 0
+            
+            while contador_tds < cantidad_tds:                
+
+                # NOTE: Posición
+                if contador_tds == 0:
+                    posicion_equipo = estadisticas_equipos_td[0].text if estadisticas_equipos_td[0] is not None else ''                                
+
+                # NOTE: Nombre y logo equipo 
+                if contador_tds == 1:
+                    # TODO: partido en vivo (marcador online) Table_live_game
+                    logo_equipo = estadisticas_equipos_td[1].find('img') if len(estadisticas_equipos_td) > 0 else None
+                    nombre_equipo = estadisticas_equipos_td[1].find('a') if len(estadisticas_equipos_td) > 0 else None
+                    
+                    if logo_equipo is not None:
+                        logo_equipo = logo_equipo.get('src')
+                    if nombre_equipo is not None:
+                        nombre_equipo = nombre_equipo.text
+
+                # NOTE: Cantidad de partidos jugados en el torneo
+                if contador_tds == 2:
+                    cantidad_partidos_jugados = estadisticas_equipos_td[2].text if len(estadisticas_equipos_td) > 1 else None
+                    
+                # NOTE: Puntos
+                if contador_tds == 3:
+                    puntos_equipo = estadisticas_equipos_td[3].text if len(estadisticas_equipos_td) > 2 else None
+                    
+                # NOTE: Partidos ganados
+                if contador_tds == 4:
+                    partidos_ganados = estadisticas_equipos_td[4].text if len(estadisticas_equipos_td) > 3 else None
+                    
+                # NOTE: Partidos empatados
+                if contador_tds == 5:
+                    partidos_empatados = estadisticas_equipos_td[5].text if len(estadisticas_equipos_td) > 4 else None
+                    
+                # NOTE: Partidos perdidos
+                if contador_tds == 6:
+                    partidos_perdidos = estadisticas_equipos_td[6].text if len(estadisticas_equipos_td) > 5 else None
+                    
+                # NOTE: Goles a favor
+                if contador_tds == 7:
+                    goles_a_favor = estadisticas_equipos_td[7].text if len(estadisticas_equipos_td) > 6 else None
+                    
+                # NOTE: Goles en contra
+                if contador_tds == 8:
+                    goles_en_contra = estadisticas_equipos_td[8].text if len(estadisticas_equipos_td) > 7 else None
+                                    
+                if contador_tds == 9:
+                    diferencia_goles = estadisticas_equipos_td[9].text if len(estadisticas_equipos_td) > 8 else None
+
+                # NOTE: Resultados últimos 5 jugaddos
+                if contador_tds == 10:
+                    
+                    resultados_ultimos_jugados = estadisticas_equipos_td[10].select('td.forms div')
+                    cantidad_resultados = len(resultados_ultimos_jugados)
+                    
+                    if cantidad_resultados > 0:
+
+                        contador_resultados = 0
+                        operaciones_tabla = TablaPosiciones() 
+                        
+                        while contador_resultados < cantidad_resultados:
+                                                        
+                            res_texto = resultados_ultimos_jugados[contador_resultados].text
+                            res_texto = res_texto.strip()
+                            res_numerico = operaciones_tabla.transcribir_partidos_jugados(
+                                res_texto
+                            )
+                            dict_ultimos_jugados[contador_resultados] = res_numerico                            
+                            contador_resultados +=1
+                
+                contador_tds+= 1    
+            cantidad_tds = 0
+            
+            equipos_posicion.append({
+                'nombre_equipo_full':           utilidades_global.retornar_cadena_sin_acento(nombre_equipo),
+                'url_logo_equipo':              logo_equipo,
+                'posicion':                     posicion_equipo,
+                'partidos_jugados':             cantidad_partidos_jugados,
+                'partidos_ganados':             partidos_ganados,
+                'partidos_empatados':           partidos_empatados,
+                'partidos_perdidos':            partidos_perdidos,
+                'goles_a_favor':                goles_a_favor,
+                'goles_en_contra':              goles_en_contra,
+                'goles_diferencia':             diferencia_goles,
+                'puntos':                       puntos_equipo,
+                'resultados_ultimos_5_jugados': dict_ultimos_jugados,
+            })
+        
+        status_code = 200
+
+    return {
+        'status_code':       status_code,
+        'tabla_posiciones':  equipos_posicion,
+        'path_to_scrape':    path_to_scrape,
+        'exception_content': exception_content
+    }
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-next-matches-wplay-by-league')
