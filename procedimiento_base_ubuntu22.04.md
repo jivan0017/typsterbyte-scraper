@@ -1,5 +1,4 @@
 ## INSTALACIÓN PY
-
 sudo apt update
 sudo apt upgrade -y
 sudo reboot
@@ -21,12 +20,12 @@ source venv/bin/activate
 sudo pip3 install requests requests-html beautifulsoup4
 
 <!-- sudo pip install beautifulsoup4 -->
-sudo pip3 install beautifulsoup4 lxml html5lib selenium webdriver-manager
+sudo pip3 install lxml html5lib selenium webdriver-manager
  -----
  ## en  caso de tener todo en un fichero txt (dependencias)
  pip install -r requirements.txt
 
--- dentro del directorio:
+-- dentro del directorio base raíz:
 sudo nano gunicorn_conf.py 
 sudo nano /etc/systemd/system/tipsterbyte_scraper.service
 -------------
@@ -46,9 +45,10 @@ WantedBy=multi-user.target
 
 sudo systemctl start tipsterbyte_scraper
 sudo systemctl enable tipsterbyte_scraper
+sudo systemctl status tipsterbyte_scraper
 
 sudo systemctl daemon-reload
 sudo systemctl restart gunicorn
 sudo systemctl status gunicorn
 
-sudo chmod 666 /var/www/api-scraper-tipsterbyte.memodevs.com/error.log
+sudo chmod 666 /var/www/api-scraper-tipsterbyte.memodevs.com/error_log
