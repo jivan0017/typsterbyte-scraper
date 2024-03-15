@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from requests_html import AsyncHTMLSession
 from bs4 import BeautifulSoup
 import json
+import numbers
 
 # miembros propios
 from bussiness.tabla_posiciones import TablaPosiciones
@@ -20,7 +21,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import platform
 
-
+import sys
 import requests
 
 # IMPORTS SIN USO: (testear para eliminar)
@@ -35,8 +36,8 @@ import requests
 
 # TODO: ejemplos para experimentar con variables globales
 app = FastAPI(
-    title='Live de CF',
-    description='Prueba de API',
+    title='Web Scraping - TipsterByte',
+    description='TipsterByte Scraping by league',
     version='1.0.1'
 )
 
@@ -84,6 +85,45 @@ async def regions():
         "spotify_countries":spot_countries
         }
     
+ 
+def num_there(s):
+    return any(i.isdigit() for i in s) 
+    
+async def get_calendar_data_details(url_details: str, count_fechas_partido):
+    # details
+    print(">>>>> MATCH DETAILLS::: ", url_details, " $$$$ contador $$$$ ", count_fechas_partido)
+    
+    detalles_estadisticas = {}
+    
+    page_details = urlopen(url_details).read()
+    soup_details = BeautifulSoup(page_details)                        
+    table_main = soup_details.select('.boxhome.boxnormal table')
+    
+    if len(table_main) > 0:
+        # print(">>>>> MATCH DETAILLS::: ttablel  ", table_main)
+        table_main = table_main[0]
+        # .boxhome.boxnormal table .barstyle.bar4:nth-child(1)
+        posesion_balon = table_main.select('.barstyle.bar4:nth-child(1) td')
+        # print(">>>>> POSESION MATCH DETAILS::: ----> ----> ----> tablel posesion ", " ttabla main:: ", table_main)
+        
+        if (len(posesion_balon) > 1):
+            
+            detalles_estadisticas['equipo_a'] = {
+                'posesion': posesion_balon[0].text,
+                'otro': 817,
+            }
+            detalles_estadisticas['equipo_b'] = {
+                'posesion': posesion_balon[2].text,
+                'otro': 817,
+            }
+        
+    table_main = None
+    soup_details = None
+    page_details = None
+    
+    return detalles_estadisticas
+    
+    
 async def get_regions_spotify(url):
     asession = AsyncHTMLSession()
     html = await asession.get(url)
@@ -102,30 +142,42 @@ async def get_regions_spotify(url):
 
 # NOTE: método funcional activo como parte del mecacnismo
 @app.get('/ext-calendar-league-by-league')
-async def extCalendarLeagueByLeague(path_to_scrape: str = None):
+async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_status: bool = False):
 
+    sys.setrecursionlimit(999000) # 10000 es un ejemplo puedes variar el numero incrementando o decrementando
     utilidades_global = UtilitiesMontecarlo()
     fecha_actual = datetime.now()
     exception_content = None
+    url_base_page = "https://www.resultados-futbol.com"
     
-    url = "https://www.resultados-futbol.com/premier2024/grupo1/calendario" #"https://www.resultados-futbol.com/apertura_colombia2024/grupo1/calendario"
+    # url = "https://www.resultados-futbol.com/premier2024/grupo1/calendario" #"https://www.resultados-futbol.com/apertura_colombia2024/grupo1/calendario"
+    url = "https://www.resultados-futbol.com/usa2024/grupo1/calendario"
+    
     page0 = urlopen(url).read()
     soup0 = BeautifulSoup(page0)
     
     # adding 2 seconds time delay
     time.sleep(2)
     
-    tabla0 = soup0.select(".boxhome-2col")
+    tabla0 = soup0.select(".col-calendar-content .boxhome.boxhome-2col")
     arr_aplazados = []
     arr_contenido_partidos = []
     arr_jornadas_content = []
+    
+    arr_links_detalles_content = []
+    arr_calendarios_links_detalles = []
+    
+    # Contadores
+    count_fechas_partido = 0
+    count_fechas_calendar = 0
     
     # Recorriendo todos los partidos por jornadas de una temporada (semestre)
     for table in tabla0:
          
         jornada = table.find_all("span", class_="titlebox") 
         jornada = jornada[0].text
-        rows = table.select('table tr')
+        rows = table.select('table tr')    
+                
          
         for row in rows:
     
@@ -168,14 +220,16 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None):
 
                     particion_fecha_partido = fecha_hora_partido.split("T")
                     
-                    if len(particion_fecha_partido) > 0:
-                        fecha_hora_partido = particion_fecha_partido[0].strip() + " " + particion_fecha_partido[1].strip()                    
+                    # if len(particion_fecha_partido) > 0:
+                        
+                        # TODO: COMENTADO
+                        # fecha_hora_partido = particion_fecha_partido[0].strip() + " " + particion_fecha_partido[1].strip()                    
                             
-                        fecha_p = datetime.strptime(fecha_hora_partido, '%Y-%m-%d %H:%M:%S')
-                        fecha_p2 = datetime.strftime(fecha_actual, '%Y-%m-%d %H:%M:%S')
-                        print("ttttttttttttttttttttttttttttttttttt ", type(fecha_p))
-                        print("ddddddddddddddddddddddddddddd ", " ahora: ",type(fecha_actual))
-                        print("reswtassssssssssssssssssss ", (fecha_p - fecha_actual))
+                        # fecha_p = datetime.strptime(fecha_hora_partido, '%Y-%m-%d %H:%M:%S')
+                        # fecha_p2 = datetime.strftime(fecha_actual, '%Y-%m-%d %H:%M:%S')
+                        # print("ttttttttttttttttttttttttttttttttttt ", type(fecha_p))
+                        # print("ddddddddddddddddddddddddddddd ", " ahora: ",type(fecha_actual))
+                        # print("reswtassssssssssssssssssss ", (fecha_p - fecha_actual))
             
             if len(fecha_corta_partido) > 0:
                 print(fecha_corta_partido)
@@ -207,19 +261,75 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None):
                 goles_equipo_2 = ''
                 flag_partido_jugado = False
                 
+                detalles_estadisticas = []
+                link_full_estadisticas_detalles_content = ''
+                
                 if "-" or ":" in contenido_a_evaluar:
-
-                    if "-" in contenido_a_evaluar:
+                    estadisticas_jornada_local = {}
+                                        
+                    if "-" in contenido_a_evaluar:  
+                        
+                        # print(" &&&&&&&&&&&&&&&&&&&&&&& SE EVALUA ESTA EXPRESION", contenido_a_evaluar)                        
                         contenido_a_evaluar = contenido_a_evaluar.split("-")
                         goles_equipo_1 = contenido_a_evaluar[0].strip()
                         goles_equipo_2 = contenido_a_evaluar[1].strip()
-                        flag_partido_jugado = True
                         
+                        if num_there(goles_equipo_1) and num_there(goles_equipo_2) and isinstance(int(goles_equipo_1), numbers.Number) and isinstance(int(goles_equipo_2), numbers.Number):
+                                          
+                            flag_partido_jugado = True                                
+                            
+                            # >>>
+                            # solo si el partido se jugó se consultas los detalles:
+                            # detalles partido, alternativas
+                            
+                            if bool(get_details_status) == True:
+                                
+                                link_detalles_partido = row.find("a", {"class": "c"}).get("href")
+                                link_full_estadisticas_detalles_content =  url_base_page + link_detalles_partido
+
+                                # url_details  = url_base_page + link_detalles_partido
+                                # page_details = urlopen(url_details).read()
+                                # soup_details = BeautifulSoup(page_details)                        
+                                # table_main = soup_details.select('.boxhome.boxnormal table')
+                                
+                                # if len(table_main) > 0:
+                                #     # print(">>>>> MATCH DETAILLS::: ttablel  ", table_main)
+                                #     table_main = table_main[0]
+                                #     posesion_balon = table_main.select('.barstyle.bar4 td')
+                                #     print(">>>>> MATCH DETAILLS::: ttablel posesion ", posesion_balon)
+                                    
+                                #     if (len(posesion_balon) > 2):
+                                        
+                                #         detalles_estadisticas.append({
+                                #             'equipo_a': {
+                                #                 'posesion': posesion_balon[0],                                    
+                                #                 'otro': 817,
+                                #             },
+                                #             'equipo_b': {
+                                #                 'posesion': posesion_balon[2],
+                                #                 'otro': 817,
+                                #             }                                
+                                #         })
+                                #         print("# lea lea lea ::: ")
+                                    
+                                # table_main = None
+                                # soup_details = None
+                                # page_details = None
+                                
+                                # <<<                          
+
+                        else:
+                            goles_equipo_1 = "x"
+                            goles_equipo_2 = "x"
+                            link_full_estadisticas_detalles_content = ""                                                                            
+
+                    # NOTE: Sin fecha asignada, es partido NO jugado: partido pendiente por jugar
                     elif ":" in contenido_a_evaluar:
                         contenido_a_evaluar = contenido_a_evaluar.split(":")
                         goles_equipo_1 = "x"
                         goles_equipo_2 = "x"
-                        
+                        link_full_estadisticas_detalles_content = ""
+                         
                     detalle_partido_jornada = {
                         'jornada'              : jornada,
                         'partiddo_jugado'      : flag_partido_jugado,
@@ -231,9 +341,14 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None):
                         'goles_equipo1'        : goles_equipo_1,
                         'goles_equipo2'        : goles_equipo_2,
                         'partido_aplazado_flag': cadena_texto_val_partido,
+                        'url_estadisticas_detalles': link_full_estadisticas_detalles_content,
+                        'estadisticas_detalles': estadisticas_jornada_local,
+                        'partido_procesado_status': False
                     }
                     
                     arr_contenido_partidos.append(detalle_partido_jornada)
+
+
 
 
             # TODO: tener en cuenta este código comentado para ver los detalles de un partido jugado en calendario, nos podrían servir estadísticas como tarjetas, goles por jugador, etc.
@@ -254,13 +369,54 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None):
             # soup_details = BeautifulSoup(page_details)            
 
             # print(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& ", soup_details)
+            
+          
+
 
         # solo partidos jugados
         if len(arr_contenido_partidos) > 0:
             arr_jornadas_content.append(arr_contenido_partidos)
 
-        arr_contenido_partidos = []        
+    arr_contenido_partidos = []
+    count_fechas_calendar = count_fechas_calendar + 1
+
+    # NOTE: Si se solicitan detalles de estadísticas, se procesan y asignan:
+    if bool(get_details_status) == True:
+            
+            count_fechas_calendar = 0
+            count_sin_detalles = 0            
+            contador_calendarios = len(arr_jornadas_content)
+                        
+            for calendario in arr_jornadas_content:
+                
+                count_fechas_partido = 0
+                count_sin_detalles = 0
+                
+                # print("TEMPORAL >>> ", calendario)
+                
+                for fecha in calendario:                
+                    
+                    count_fechas_partido = count_fechas_partido + 1
+                    
+                    if  fecha['partido_procesado_status'] is False:
+
+                        if fecha['url_estadisticas_detalles'] != "":
+                            url = fecha['url_estadisticas_detalles']                            
+                            arr_temp = await get_calendar_data_details(str(url), count_fechas_partido)
+                            fecha['estadisticas_detalles'] = arr_temp
+                            fecha['partido_procesado_status'] = True
+                            arr_temp = {}
+                        else: 
+                            count_sin_detalles = count_sin_detalles + 1
+                        
+                count_fechas_calendar = count_fechas_calendar + 1
+                
+                if contador_calendarios == count_fechas_calendar:
+                    print(" ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO VÚLTIMO ÚLTIMO ÚLTIMO VÚLTIMO ")
+                    break
         
+            print(">>>>>>>>  contador_calendarios <>>> ", contador_calendarios)
+
     return {
         'success': True,
         'partidos_por_jornada': arr_jornadas_content
