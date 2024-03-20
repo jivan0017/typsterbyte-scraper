@@ -82,8 +82,8 @@ def index():
 async def regions():
     spot_countries = await get_regions_spotify(platforms["spotify"]["base_url"])
     return {
-        "spotify_countries":spot_countries
-        }
+        "spotify_countries": spot_countries
+    }
     
  
 def num_there(s):
@@ -102,19 +102,49 @@ async def get_calendar_data_details(url_details: str, count_fechas_partido):
     if len(table_main) > 0:
         # print(">>>>> MATCH DETAILLS::: ttablel  ", table_main)
         table_main = table_main[0]
-        # .boxhome.boxnormal table .barstyle.bar4:nth-child(1)
-        posesion_balon = table_main.select('.barstyle.bar4:nth-child(1) td')
+        posesion_balon      = table_main.select('.barstyle.bar4:nth-child(1) td')
+        goles               = table_main.select('.barstyle.bar4:nth-child(2) td')
+        tiros_a_puerta      = table_main.select('.barstyle.bar4:nth-child(3) td')
+        tiros_fuera         = table_main.select('.barstyle.bar4:nth-child(4) td')
+        total_tiros         = table_main.select('.barstyle.bar4:nth-child(5) td')
+        paradas_del_portero = table_main.select('.barstyle.bar4:nth-child(6) td')
+        saques_de_esquina   = table_main.select('.barstyle.bar4:nth-child(7) td')
+        fueras_de_juego     = table_main.select('.barstyle.bar4:nth-child(8) td')
+        tarjetas_rojas      = table_main.select('.barstyle.bar4:nth-child(9) td')
+        asistencias         = table_main.select('.barstyle.bar4:nth-child(10) td')
+        sustituciones       = table_main.select('.barstyle.bar4:nth-child(11) td')
+        faltas              = table_main.select('.barstyle.bar4:nth-child(12) td')
         # print(">>>>> POSESION MATCH DETAILS::: ----> ----> ----> tablel posesion ", " ttabla main:: ", table_main)
         
         if (len(posesion_balon) > 1):
             
             detalles_estadisticas['equipo_a'] = {
-                'posesion': posesion_balon[0].text,
-                'otro': 817,
+                'posesion'           : posesion_balon[0].text       if len(posesion_balon) > 0 else None,
+                'goles'              : goles[0].text                if len(goles) > 0 else None,
+                'tiros_a_puerta'     : tiros_a_puerta[0].text       if len(tiros_a_puerta) > 0 else None,
+                'tiros_fuera'        : tiros_fuera[0].text          if len(tiros_fuera) > 0 else None,
+                'total_tiros'        : total_tiros[0].text          if len(total_tiros) > 0 else None,
+                'paradas_del_portero': paradas_del_portero[0].text  if len(paradas_del_portero) > 0 else None,
+                'saques_de_esquina'  : saques_de_esquina[0].text    if len(saques_de_esquina) > 0 else None,
+                'fueras_de_juego'    : fueras_de_juego[0].text      if len(fueras_de_juego) > 0 else None,
+                'tarjetas_rojas'     : tarjetas_rojas[0].text       if len(tarjetas_rojas) > 0 else None,
+                'asistencias'        : asistencias[0].text          if len(asistencias) > 0 else None,
+                'sustituciones'      : sustituciones[0].text        if len(sustituciones) > 0 else None,
+                'faltas'             : faltas[0].text               if len(faltas) > 0 else None
             }
             detalles_estadisticas['equipo_b'] = {
-                'posesion': posesion_balon[2].text,
-                'otro': 817,
+                'posesion'           : posesion_balon[2].text       if len(posesion_balon) > 1 else None,
+                'goles'              : goles[2].text                if len(goles) > 1 else None,
+                'tiros_a_puerta'     : tiros_a_puerta[2].text       if len(tiros_a_puerta) > 1 else None,
+                'tiros_fuera'        : tiros_fuera[2].text          if len(tiros_fuera) > 1 else None,
+                'total_tiros'        : total_tiros[2].text          if len(total_tiros) > 1 else None,
+                'paradas_del_portero': paradas_del_portero[2].text  if len(paradas_del_portero) > 1 else None,
+                'saques_de_esquina'  : saques_de_esquina[2].text    if len(saques_de_esquina) > 1 else None,
+                'fueras_de_juego'    : fueras_de_juego[2].text      if len(fueras_de_juego) > 1 else None,
+                'tarjetas_rojas'     : tarjetas_rojas[2].text       if len(tarjetas_rojas) > 1 else None,
+                'asistencias'        : asistencias[2].text          if len(asistencias) > 1 else None,
+                'sustituciones'      : sustituciones[2].text        if len(sustituciones) > 1 else None,
+                'faltas'             : faltas[2].text               if len(faltas) > 1 else None
             }
         
     table_main = None
@@ -129,7 +159,7 @@ async def get_regions_spotify(url):
     html = await asession.get(url)
     await html.html.arender(sleep=3)
     soup = BeautifulSoup(html.text, "html.parser")
-    drop_down = soup.find_all("div",{"class": "responsive-select", "data-type":"country"})[0]
+    drop_down = soup.find_all("div",{"class": "responsive-select", "data-type":"country"})[2]
     countries = {}
     lists = drop_down.find_all("li")
     for l in lists:
@@ -146,7 +176,7 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
 
     sys.setrecursionlimit(999000) # 10000 es un ejemplo puedes variar el numero incrementando o decrementando
     utilidades_global = UtilitiesMontecarlo()
-    fecha_actual = datetime.now()
+    # fecha_actual = datetime.now()
     exception_content = None
     url_base_page = "https://www.resultados-futbol.com"
     
@@ -158,14 +188,10 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
     
     # adding 2 seconds time delay
     time.sleep(2)
-    
     tabla0 = soup0.select(".col-calendar-content .boxhome.boxhome-2col")
     arr_aplazados = []
     arr_contenido_partidos = []
     arr_jornadas_content = []
-    
-    arr_links_detalles_content = []
-    arr_calendarios_links_detalles = []
     
     # Contadores
     count_fechas_partido = 0
@@ -176,13 +202,9 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
          
         jornada = table.find_all("span", class_="titlebox") 
         jornada = jornada[0].text
-        rows = table.select('table tr')    
-                
+        rows = table.select('table tr')                
          
         for row in rows:
-    
-            # info por row de partidos por jornada en liga
-            fpartido = row.select("td.fecha") 
             
             # ANCHOR - Obteniendo los nombres de los equipos
             equipos = row.find_all("img")
@@ -190,7 +212,6 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
             if len(equipos) > 0:
                 equipo_1 = equipos[0]
                 equipo_1 = equipo_1.get("alt")
-                
                 equipo_2 = equipos[1]
                 equipo_2 = equipo_2.get("alt")
             
@@ -199,9 +220,6 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
             
             # posible marcador/fecha partido
             contenido_partido = row.select("td.rstd :not(span)")
-                                                
-            # resultado:
-            resultado_goles_partido = row.select("td.rstd a.url")
             
             # detalles partido, alternativas
             link_detalles_partido = row.find("a", {"class": "c"}).get("href")
@@ -216,30 +234,15 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
 
                 fecha_hora_partido = fecha_hora_partido[0].text
                 
-                if fecha_hora_partido is not None:
-
-                    particion_fecha_partido = fecha_hora_partido.split("T")
-                    
-                    # if len(particion_fecha_partido) > 0:
-                        
-                        # TODO: COMENTADO
-                        # fecha_hora_partido = particion_fecha_partido[0].strip() + " " + particion_fecha_partido[1].strip()                    
-                            
-                        # fecha_p = datetime.strptime(fecha_hora_partido, '%Y-%m-%d %H:%M:%S')
-                        # fecha_p2 = datetime.strftime(fecha_actual, '%Y-%m-%d %H:%M:%S')
-                        # print("ttttttttttttttttttttttttttttttttttt ", type(fecha_p))
-                        # print("ddddddddddddddddddddddddddddd ", " ahora: ",type(fecha_actual))
-                        # print("reswtassssssssssssssssssss ", (fecha_p - fecha_actual))
+                # if fecha_hora_partido is not None:
+                #     particion_fecha_partido = fecha_hora_partido.split("T")
             
             if len(fecha_corta_partido) > 0:
                 print(fecha_corta_partido)
                 fecha_corta_partido = fecha_corta_partido[0].text
 
             # ANCHOR Validación del contenido del partido            
-            # print("contenido partido:::: ", len(contenido_partido))
-            
             if len(contenido_partido) > 0:
-                # print("CONTENIDO PARTIDO <<<<<<<<<<<<<<<<<<<<<< ///////////////////  ", contenido_partido[0])
 
                 # ANCHOR Validación de partidos aplazados
                 if len(posible_partido_aplazado) > 0:
@@ -251,7 +254,6 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                         'aplazado': cadena_texto_val_partido,
                         'coincidencia': 'Apl' in cadena_texto_val_partido
                     })
-                    # if posible_partido_aplazado[0].text == 'Apl':
 
                 # ANCHOR - Validar que el partido ya haya pasado
                 contenido_a_evaluar = contenido_partido[0].text
@@ -260,16 +262,13 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                 goles_equipo_1 = ''
                 goles_equipo_2 = ''
                 flag_partido_jugado = False
-                
-                detalles_estadisticas = []
                 link_full_estadisticas_detalles_content = ''
                 
                 if "-" or ":" in contenido_a_evaluar:
                     estadisticas_jornada_local = {}
                                         
                     if "-" in contenido_a_evaluar:  
-                        
-                        # print(" &&&&&&&&&&&&&&&&&&&&&&& SE EVALUA ESTA EXPRESION", contenido_a_evaluar)                        
+
                         contenido_a_evaluar = contenido_a_evaluar.split("-")
                         goles_equipo_1 = contenido_a_evaluar[0].strip()
                         goles_equipo_2 = contenido_a_evaluar[1].strip()
@@ -281,42 +280,10 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                             # >>>
                             # solo si el partido se jugó se consultas los detalles:
                             # detalles partido, alternativas
-                            
                             if bool(get_details_status) == True:
                                 
                                 link_detalles_partido = row.find("a", {"class": "c"}).get("href")
-                                link_full_estadisticas_detalles_content =  url_base_page + link_detalles_partido
-
-                                # url_details  = url_base_page + link_detalles_partido
-                                # page_details = urlopen(url_details).read()
-                                # soup_details = BeautifulSoup(page_details)                        
-                                # table_main = soup_details.select('.boxhome.boxnormal table')
-                                
-                                # if len(table_main) > 0:
-                                #     # print(">>>>> MATCH DETAILLS::: ttablel  ", table_main)
-                                #     table_main = table_main[0]
-                                #     posesion_balon = table_main.select('.barstyle.bar4 td')
-                                #     print(">>>>> MATCH DETAILLS::: ttablel posesion ", posesion_balon)
-                                    
-                                #     if (len(posesion_balon) > 2):
-                                        
-                                #         detalles_estadisticas.append({
-                                #             'equipo_a': {
-                                #                 'posesion': posesion_balon[0],                                    
-                                #                 'otro': 817,
-                                #             },
-                                #             'equipo_b': {
-                                #                 'posesion': posesion_balon[2],
-                                #                 'otro': 817,
-                                #             }                                
-                                #         })
-                                #         print("# lea lea lea ::: ")
-                                    
-                                # table_main = None
-                                # soup_details = None
-                                # page_details = None
-                                
-                                # <<<                          
+                                link_full_estadisticas_detalles_content =  url_base_page + link_detalles_partido                        
 
                         else:
                             goles_equipo_1 = "x"
@@ -347,31 +314,6 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                     }
                     
                     arr_contenido_partidos.append(detalle_partido_jornada)
-
-
-
-
-            # TODO: tener en cuenta este código comentado para ver los detalles de un partido jugado en calendario, nos podrían servir estadísticas como tarjetas, goles por jugador, etc.
-            # if len(resultado_goles_partido) > 0:
-            #     print("goles partido ¿? ????????????????????? ", resultado_goles_partido[0].text)
-            
-            # link_path_detalles = link_detalles_partido.get('href')
-            
-            # fpartido = row.select("td.fecha") 
-            
-            # print("jornada: ", jornada, "fecha partido: ", type(fpartido), " ::: ", fpartido[0].text)
-            # print("Resumen partido >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> :::::::::::::: ", link_detalles_partido)
-    
-            # ******************** https://www.resultados-futbol.com/
-            
-            # url_details  = "https://www.resultados-futbol.com" + link_detalles_partido
-            # page_details = urlopen(url_details).read()
-            # soup_details = BeautifulSoup(page_details)            
-
-            # print(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& ", soup_details)
-            
-          
-
 
         # solo partidos jugados
         if len(arr_contenido_partidos) > 0:
@@ -408,14 +350,12 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                             arr_temp = {}
                         else: 
                             count_sin_detalles = count_sin_detalles + 1
+                            print("sin detalles, fecha partido: ", count_fechas_partido)
                         
                 count_fechas_calendar = count_fechas_calendar + 1
                 
                 if contador_calendarios == count_fechas_calendar:
-                    print(" ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO ÚLTIMO VÚLTIMO ÚLTIMO ÚLTIMO VÚLTIMO ")
                     break
-        
-            print(">>>>>>>>  contador_calendarios <>>> ", contador_calendarios)
 
     return {
         'success': True,
@@ -428,9 +368,9 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
     exception_content = ''
-    status_code = None
-    sistema = platform.system()
-    os_name = format(sistema)
+    status_code       = None
+    sistema           = platform.system()
+    os_name           = format(sistema)
 
     # URL SEMILLA
     url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
@@ -452,23 +392,22 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
         for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
 
             posicion_equipo = equipo.find(class_='wff_standings_position_marker').text.lstrip().rstrip()
-            nombre_equipo = equipo.find(class_='wff_participant_name').text.lstrip().rstrip()
-            logo_equipo = equipo.find(class_='wff_flag_logo_img').get('src')
+            nombre_equipo   = equipo.find(class_='wff_participant_name').text.lstrip().rstrip()
+            logo_equipo     = equipo.find(class_='wff_flag_logo_img').get('src')
             
             # Grupo de estadísticas
-            estadisticas_equipo = equipo.find_all(class_='wff_standings_stats_box')
+            estadisticas_equipo   = equipo.find_all(class_='wff_standings_stats_box')
             cantidad_estadisticas = len(estadisticas_equipo)        
-            dict_estadisticas = {}
-            contador = 0
-            
-            goles_a_favor = ''
-            goles_en_contra = ''        
+            dict_estadisticas     = {}
+            contador              = 0
+            goles_a_favor         = ''
+            goles_en_contra       = ''
 
             # recorriendo estadísticas
             while contador < cantidad_estadisticas:
+
                 est = estadisticas_equipo[contador]
                 item_dynamic = est.select_one('div > div').text
-                # dict_estadisticas[contador] = item_dynamic.strip()
                 
                 if contador == 4:
                     goles_favor_y_contra = item_dynamic.strip().replace(" ", "")
@@ -477,7 +416,7 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
                     print("elemento #4: split ", goles_favor_y_contra)
                     
                     if len(goles_favor_y_contra) > 0:
-                        goles_a_favor = goles_favor_y_contra[0]
+                        goles_a_favor   = goles_favor_y_contra[0]
                         goles_en_contra = goles_favor_y_contra[1]
                     
                     dict_estadisticas[contador] = item_dynamic.strip().replace(" ", "")
@@ -488,16 +427,17 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
             
             # grupo de últimos partidos jugados
             ultimos_partidos_jugados_container = equipo.find(class_='wff_form')
-            ultimos_jugados_items = ultimos_partidos_jugados_container.find_all(class_='wff_form_ball')
-            cantidad_ultimos_jugados = len(ultimos_jugados_items)        
-            contador = 0
-            dict_ultimos_jugados = {}
+            ultimos_jugados_items              = ultimos_partidos_jugados_container.find_all(class_='wff_form_ball')
+            cantidad_ultimos_jugados           = len(ultimos_jugados_items)        
+            contador                           = 0
+            dict_ultimos_jugados               = {}
             
             if cantidad_ultimos_jugados > 0:
                 operaciones_tabla = TablaPosiciones() 
             
             while contador < cantidad_ultimos_jugados:
-                jugado = ultimos_jugados_items[contador]            
+
+                jugado       = ultimos_jugados_items[contador]            
                 item_dynamic = jugado.select_one('div.wff_label_text').text
                 item_dynamic = item_dynamic.strip()
                 
@@ -524,13 +464,13 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
                 'puntos':                       dict_estadisticas[6] if len(dict_estadisticas) > 5 else '',
                 'resultados_ultimos_5_jugados': dict_ultimos_jugados,
             })
-        
+
         status_code = 200
-    
-    except Exception as ex:    
+
+    except Exception as ex:
         status_code = 500
         exception_content = ex
-        
+
     return {
         'status_code': status_code,
         'tabla_posiciones': equipos_posicion,
@@ -543,9 +483,9 @@ async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
     exception_content = ''
-    status_code = None
-    sistema = platform.system()
-    os_name = format(sistema)
+    status_code       = None
+    sistema           = platform.system()
+    os_name           = format(sistema)
 
     # URL SEMILLA
     url = "https://www.goal.com/es-co/primera-a/clasificaci%C3%B3n/2ty8ihceabty8yddmu31iuuej"
@@ -559,44 +499,43 @@ async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
     
     options.add_experimental_option('excludeSwitches', ['enable-logging']) 
     service = Service(ChromeDriverManager().install()) 
-    driver = webdriver.Chrome(service=service, options=options)        
+    driver  = webdriver.Chrome(service=service, options=options)        
     #driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
+
     try:        
         # REQUERIMIENTO AL SERVIDOR
         driver.get(url)
-        soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
+        soup_posiciones  = BeautifulSoup(driver.page_source, 'lxml')
         lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')         
         
         for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
 
             posicion_equipo = equipo.find(class_='wff_standings_position_marker').text.lstrip().rstrip()
-            nombre_equipo = equipo.find(class_='wff_participant_name').text.lstrip().rstrip()
-            logo_equipo = equipo.find(class_='wff_flag_logo_img').get('src')
+            nombre_equipo   = equipo.find(class_='wff_participant_name').text.lstrip().rstrip()
+            logo_equipo     = equipo.find(class_='wff_flag_logo_img').get('src')
             
             # Grupo de estadísticas
-            estadisticas_equipo = equipo.find_all(class_='wff_standings_stats_box')
+            estadisticas_equipo   = equipo.find_all(class_='wff_standings_stats_box')
             cantidad_estadisticas = len(estadisticas_equipo)        
-            dict_estadisticas = {}
-            contador = 0
-            
-            goles_a_favor = ''
-            goles_en_contra = ''        
+            dict_estadisticas     = {}
+            contador              = 0            
+            goles_a_favor         = ''
+            goles_en_contra       = ''
 
             # recorriendo estadísticas
             while contador < cantidad_estadisticas:
-                est = estadisticas_equipo[contador]
+
+                est          = estadisticas_equipo[contador]
                 item_dynamic = est.select_one('div > div').text
                 # dict_estadisticas[contador] = item_dynamic.strip()
                 
                 if contador == 4:
                     goles_favor_y_contra = item_dynamic.strip().replace(" ", "")
-                    goles_favor_y_contra = goles_favor_y_contra.split('-')
-                    
+                    goles_favor_y_contra = goles_favor_y_contra.split('-')                    
                     print("elemento #4: split ", goles_favor_y_contra)
                     
                     if len(goles_favor_y_contra) > 0:
-                        goles_a_favor = goles_favor_y_contra[0]
+                        goles_a_favor   = goles_favor_y_contra[0]
                         goles_en_contra = goles_favor_y_contra[1]
                     
                     dict_estadisticas[contador] = item_dynamic.strip().replace(" ", "")
@@ -607,16 +546,16 @@ async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
             
             # grupo de últimos partidos jugados
             ultimos_partidos_jugados_container = equipo.find(class_='wff_form')
-            ultimos_jugados_items = ultimos_partidos_jugados_container.find_all(class_='wff_form_ball')
-            cantidad_ultimos_jugados = len(ultimos_jugados_items)        
-            contador = 0
-            dict_ultimos_jugados = {}
+            ultimos_jugados_items              = ultimos_partidos_jugados_container.find_all(class_='wff_form_ball')
+            cantidad_ultimos_jugados           = len(ultimos_jugados_items)        
+            contador                           = 0
+            dict_ultimos_jugados               = {}
             
             if cantidad_ultimos_jugados > 0:
                 operaciones_tabla = TablaPosiciones() 
             
             while contador < cantidad_ultimos_jugados:
-                jugado = ultimos_jugados_items[contador]            
+                jugado       = ultimos_jugados_items[contador]            
                 item_dynamic = jugado.select_one('div.wff_label_text').text
                 item_dynamic = item_dynamic.strip()
                 
@@ -858,49 +797,10 @@ async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
 async def scrapper2(matches_league_path: str = None, position_table_league_path: str = None):    
     
     # TODO: Creación de instancias/utilidades
-    tabla_posiciones = TablaPosiciones()
     utilidades_global = UtilitiesMontecarlo()
-    
     fecha_actual = datetime.now()
-    ahora = fecha_actual #datetime.strptime(fecha_actual, '%Y-%m-%d %H:%M:%S')
-    
-    
-    #     {
-    #     "url_liga_colombia": "https://www.resultados-futbol.com/apertura_colombia2023/grupo1/calendario",
-    #     "bloque_jornada": ".boxhome.boxhome-2col",
-    #     "bloque_tabla_matches_resultados": ".boxhome.boxhome-2col table"
-    # }
-    
-    # calendario_liga = {
-    #     'header_info': {            
-    #     },
-    #     'content_info': {
-    #         {
-    #             'jornada': None,
-    #             'partidos': [
-    #                 {
-    #                     'fecha': None,
-    #                     'estado_partido': 'jugado',
-    #                     'equipo1': {
-    #                         'nombre_equipo': None,
-    #                         'goles_anotados': 0
-    #                     }
-                        
-    #                 }
-    #             ]
-    #         }
-    #     }
-    # }
-    
-    # liga_origen = {
-    #     'pais': 'COLOMBIA',
-    #     'semestre': 1
-    # }
-        
-    # calendario_liga.update(liga_origen)
     
     url_liga_betplay_jornadas = platforms["resultados-futbol"][0]
-    json_url_liga_betplay_jornadas = json.dumps(url_liga_betplay_jornadas)
     # json.loads
     print("arr liga bet play jornadas:; ", url_liga_betplay_jornadas)
     print("json.dumps ::::::::::::::::::::::::::", url_liga_betplay_jornadas["url_liga_colombia"])
@@ -911,11 +811,7 @@ async def scrapper2(matches_league_path: str = None, position_table_league_path:
     
     # adding 2 seconds time delay
     time.sleep(2)
-    
     tabla0 = soup0.select(".boxhome-2col")
-    # print("# talba >>>>>>>>>>>>>>>>>>> ", tabla0)
-    # rows = tabla.find_all('tr')    
-    
     arr_aplazados = []
     arr_contenido_partidos = []
     arr_jornadas_content = []
@@ -924,47 +820,25 @@ async def scrapper2(matches_league_path: str = None, position_table_league_path:
     for table in tabla0:
          
         jornada = table.find_all("span", class_="titlebox") 
-        # jornada = jornada.text
-        # print("tipo: ", type(jornada), " :::::::::::::::::::::::::::: JORNADA ::::::::::::::::::::::::::::::::::::::::::: ", jornada[0].text)
         jornada = jornada[0].text
-         
         rows = table.select('table tr')
-        
-        # trs = rows.find_all("tr")
-        #  print("tabla >>>>>>>>>>>>>>>>>>>  ", rows)
          
         for row in rows:
-            # print("tabla >>>>>>>>>>>>>>>>>>>  ", row)
-    
-            # info por row de partidos por jornada en liga
-            # fpartido = row.select(".fecha")
-            fpartido = row.select("td.fecha") 
             
             # ANCHOR - Obteniendo los nombres de los equipos
             equipos = row.find_all("img")
             
             if len(equipos) > 0:
                 equipo_1 = equipos[0]
-                equipo_1 = equipo_1.get("alt")
-                
+                equipo_1 = equipo_1.get("alt")        
                 equipo_2 = equipos[1]
                 equipo_2 = equipo_2.get("alt")
         
-            
             # validar partido aplazado
             posible_partido_aplazado = row.select("td.rstd")
             
             # posible marcador/fecha partido
             contenido_partido = row.select("td.rstd :not(span)")
-            
-                        
-            
-            # resultado:
-            resultado_goles_partido = row.select("td.rstd a.url")
-            
-            # detalles partido, alternativas
-            link_detalles_partido = row.find("a", {"class": "c"}).get("href")
-            link_detalles_partido = row.find("a", {"class": "link"})
             
             # fecha del partido
             fecha_corta_partido = row.select("td.fecha")
@@ -1142,7 +1016,7 @@ class CalendarioLiga():
         
 
 # TODO: clase de ejemplo NO funcional
-class Scrapper(): 
+class Scrapper():
     
     def scrapedata(self, tag):
         url = f'https://quotes/toscrape/tag/{tag}'
