@@ -386,7 +386,7 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
     try:        
         # REQUERIMIENTO AL SERVIDOR
         driver.get(url)
-        soup_posiciones = BeautifulSoup(driver.page_source, 'lxml')
+        soup_posiciones  = BeautifulSoup(driver.page_source, 'lxml')
         lista_de_equipos = soup_posiciones.find_all('div', class_='wff_standings_table_row')
         
         for equipo in lista_de_equipos: # ITERAR ELEMENTO POR ELEMENTO    
@@ -406,7 +406,7 @@ async def extPositionTableByLeague(path_to_scrape: str = None):
             # recorriendo estadísticas
             while contador < cantidad_estadisticas:
 
-                est = estadisticas_equipo[contador]
+                est          = estadisticas_equipo[contador]
                 item_dynamic = est.select_one('div > div').text
                 
                 if contador == 4:
@@ -743,13 +743,13 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
 async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
     
     matches_league_for_date = []    
-    url = "https://apuestas.wplay.co/es/t/19311/Colombia-Primera-A"
-    request_url = Request(url, headers={'User-Agent': 'XYZ/3.0'})
-    exception_content = None
+    url                     = "https://apuestas.wplay.co/es/t/19311/Colombia-Primera-A"
+    request_url             = Request(url, headers={'User-Agent': 'XYZ/3.0'})
+    exception_content       = None
     
     try:
         page_url_open = urlopen(request_url).read().decode('utf8')    
-        soup = BeautifulSoup(page_url_open)    
+        soup          = BeautifulSoup(page_url_open)    
         
         # TODO: descomentar esto
         tabla = soup.find("table")
@@ -757,10 +757,9 @@ async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
             
         for row in rows:
 
-            time_hour = row.find_all("span", class_="time")
-            time_date = row.find_all("span", class_="date")
-            
-            equipo1 = row.select("td div > button > span > span.seln-label > span > span")
+            time_hour    = row.find_all("span", class_="time")
+            time_date    = row.find_all("span", class_="date")
+            equipo1      = row.select("td div > button > span > span.seln-label > span > span")
             cuota_equipo = row.select("td div > button > span .price.dec")
             # print("equipo:::::: ", equipo1[0].text, "  cuota: ", cuota_equipo[0].text, " empate.:: ", cuota_equipo[1].text)        
             # print("equipo2:::::: ", equipo1[2].text, " cupta equipo 2: ", cuota_equipo[2].text)
@@ -768,12 +767,12 @@ async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
             # CREANDO POR CADA PARTIDO EL OBJECTO CON LA INFO CORRESPONDIENTE
             # TODO: pendiente validar que existan estos indices, en el mejor de los casos existen [1], [2], pero puede ser que no hayan elementos en los arraays: cuota_equipo, equipo1, etc
             match_date = {
-                'time_match': time_hour[0].text,
-                'date_match': time_date[0].text,
-                'team_local': equipo1[0].text,
-                'quota_team_local': cuota_equipo[0].text,
-                'quota_tie': cuota_equipo[1].text,
-                'team_visiting': equipo1[2].text,
+                'time_match'         : time_hour[0].text,
+                'date_match'         : time_date[0].text,
+                'team_local'         : equipo1[0].text,
+                'quota_team_local'   : cuota_equipo[0].text,
+                'quota_tie'          : cuota_equipo[1].text,
+                'team_visiting'      : equipo1[2].text,
                 'quota_team_visiting': cuota_equipo[2].text
             }
 
