@@ -171,6 +171,8 @@ async def get_regions_spotify(url):
     return countries    
 
 # NOTE: método funcional activo como parte del mecacnismo
+# NOTE: METODO ACTIVO FUNCIONAL "extCalendarLeagueByLeague
+# TODO: quiero ver ra´pido este metodo despues 
 @app.get('/ext-calendar-league-by-league')
 async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_status: bool = False):
 
@@ -181,7 +183,8 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
     url_base_page = "https://www.resultados-futbol.com"
     
     # url = "https://www.resultados-futbol.com/premier2024/grupo1/calendario" #"https://www.resultados-futbol.com/apertura_colombia2024/grupo1/calendario"
-    url = "https://www.resultados-futbol.com/usa2024/grupo1/calendario"
+    # url = "https://www.resultados-futbol.com/usa2024/grupo1/calendario"
+    url = "https://www.resultados-futbol.com/brasil2024/grupo1/calendario"
     
     page0 = urlopen(url).read()
     soup0 = BeautifulSoup(page0)
@@ -189,6 +192,16 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
     # adding 2 seconds time delay
     time.sleep(2)
     tabla0 = soup0.select(".col-calendar-content .boxhome.boxhome-2col")
+    
+    if tabla0 is not None and len(tabla0) > 0:
+        print("SI EXISTEN REGISTROS ACTIVOS - calendario")
+        # tabla contains some value or records
+        # continue with your code here
+    else:
+        print("NO EXISTEN REGISTROS ACTIVOS - calendario")
+        # tabla is empty or None
+        # handle the case accordingly    
+    
     arr_aplazados = []
     arr_contenido_partidos = []
     arr_jornadas_content = []
@@ -281,7 +294,7 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                             # solo si el partido se jugó se consultas los detalles:
                             # detalles partido, alternativas
                             if bool(get_details_status) == True:
-                                
+                                print('>>> partido jugado: ', equipo_1, ' vs ', equipo_2, ' - ', goles_equipo_1, ' - ', goles_equipo_2)
                                 link_detalles_partido = row.find("a", {"class": "c"}).get("href")
                                 link_full_estadisticas_detalles_content =  url_base_page + link_detalles_partido                        
 
@@ -321,9 +334,21 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
 
     arr_contenido_partidos = []
     count_fechas_calendar = count_fechas_calendar + 1
+    
+    # TODO: pendiente probar!
+    # get_details_status = False
+    
+    # REVIEW: evaluar después y aprobar.
+    evaluar_detalles_calendario = bool(get_details_status)
+    
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    print('evaluar_detalles_calendario: ', evaluar_detalles_calendario)
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    
 
     # NOTE: Si se solicitan detalles de estadísticas, se procesan y asignan:
-    if bool(get_details_status) == True:
+    # NOTE: así estaba antes: if bool(get_details_status) == True:
+    if evaluar_detalles_calendario == True:
             
             count_fechas_calendar = 0
             count_sin_detalles = 0            
@@ -338,21 +363,33 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                 
                 for fecha in calendario:                
                     
-                    count_fechas_partido = count_fechas_partido + 1
+                    # count_fechas_partido = count_fechas_partido + 1
+                    count_fechas_partido += 1
                     
                     if  fecha['partido_procesado_status'] is False:
 
-                        if fecha['url_estadisticas_detalles'] != "":
-                            url = fecha['url_estadisticas_detalles']                            
-                            arr_temp = await get_calendar_data_details(str(url), count_fechas_partido)
-                            fecha['estadisticas_detalles'] = arr_temp
-                            fecha['partido_procesado_status'] = True
-                            arr_temp = {}
-                        else: 
-                            count_sin_detalles = count_sin_detalles + 1
-                            print("sin detalles, fecha partido: ", count_fechas_partido)
+                        # NOTE: comentado temporalmente
+                        # if fecha['url_estadisticas_detalles'] != "":
+                        #     url = fecha['url_estadisticas_detalles']                            
+                        #     arr_temp = await get_calendar_data_details(str(url), count_fechas_partido)
+                        #     fecha['estadisticas_detalles'] = arr_temp
+                        #     fecha['partido_procesado_status'] = True
+                        #     arr_temp = {}
+                        # else: 
+                        #     count_sin_detalles = count_sin_detalles + 1
+                        #     print("sin detalles, fecha partido: ", count_fechas_partido)
+                        if not fecha['partido_procesado_status']:
+                            if fecha['url_estadisticas_detalles'] != "":
+                                url = fecha['url_estadisticas_detalles']                            
+                                arr_temp = await get_calendar_data_details(str(url), count_fechas_partido)
+                                fecha['estadisticas_detalles'] = arr_temp
+                                fecha['partido_procesado_status'] = True
+                            else: 
+                                count_sin_detalles += 1
+                                print(f"sin detalles, fecha partido: {count_fechas_partido}")
                         
-                count_fechas_calendar = count_fechas_calendar + 1
+                #count_fechas_calendar = count_fechas_calendar + 1
+                count_fechas_calendar += 1
                 
                 if contador_calendarios == count_fechas_calendar:
                     break
@@ -362,7 +399,7 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
         'partidos_por_jornada': arr_jornadas_content
     }      
 
-# NOTE: método funcional activo como parte del mecacnismo
+# NOTE: método funcional DEPRECADO! como parte del mecacnismo
 @app.get('/ext-position-table-by-league')
 async def extPositionTableByLeague(path_to_scrape: str = None):
 
@@ -596,9 +633,12 @@ async def extPositionTableByLeagueExperimental(path_to_scrape: str = None):
         'exception_content': exception_content
     }
 
-# TODO: pendiente agregar bloques try except
+# TODO: pendiente agregar bloques try except 
+# NOTE: REFACTORIZAR MÉTODO
+# NOTE: método funcional ACTIVO como parte del mecacnismo que permite extraer tabla de posiciones con la nueva fuente deportiva
 @app.get('/ext-position-table-by-league-stable')
 async def extPositionTableByLeagueStable(path_to_scrape: str = None):
+    # extPositionTableByLeagueStable("https://www.fctables.com/brazil/serie-a/")
 
     utilidades_global = UtilitiesMontecarlo()
     exception_content = ''
@@ -610,7 +650,10 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
     equipos_posicion = []
 
     # URL SEMILLA
-    url = path_to_scrape if path_to_scrape != None else "https://www.fctables.com/colombia/liga-postobon/"
+    url = path_to_scrape if path_to_scrape != None else "https://www.fctables.com/brazil/serie-a/"
+    # NOTE: Habilitar
+    # "https://www.fctables.com/brazil/serie-a/"
+    
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36"
     }
@@ -619,7 +662,22 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
     request_url = Request(url, headers=headers)
     page_url_open = urlopen(request_url).read().decode('utf8')    
     soup = BeautifulSoup(page_url_open, 'html.parser')   
-    contenedor_equipos = soup.select('div.template_table table.stage-table tbody tr')
+    contenedor_equipos = soup.select('div.template_table div.table-responsiverrrr table.stage-table tbody tr')
+    
+    
+    # VALIDAR EXISTENCIA
+    if len(contenedor_equipos) > 0:
+        print("SI EXISTEN REGISTROS ACTIVOS - tabla de posiciones")
+        # Code to be executed if contenedor_equipos contains records
+        # ...
+        ## refactrorizar ´para el caso en que todo esté bien, dejar el código desde: 681 - 790
+        
+    else:
+        print("NO EXISTEN REGISTROS ACTIVOS - tabla de posiciones")
+        status_code = 404
+        return False
+        # Code to be executed if contenedor_equipos is empty
+        # ...    
     
     # VALIDAR EXISTENCIA
     if len(contenedor_equipos) > 0:
@@ -728,6 +786,8 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
                 'puntos':                       puntos_equipo,
                 'resultados_ultimos_5_jugados': dict_ultimos_jugados,
             })
+            
+            print('nombre equipo: ', nombre_equipo, ' - ', 'posicion: ', posicion_equipo, ' - ', 'partidos jugados: ', cantidad_partidos_jugados, ' - ', 'puntos: ', puntos_equipo, ' - ', 'partidos ganados: ', partidos_ganados, ' - ', 'partidos empatados: ', partidos_empatados, ' - ', 'partidos perdidos: ', partidos_perdidos, ' - ', 'goles a favor: ', goles_a_favor, ' - ', 'goles en contra: ', goles_en_contra, ' - ', 'diferencia goles: ', diferencia_goles, ' - ', 'resultados últimos 5 jugados: ', dict_ultimos_jugados)
         
         status_code = 200
 
@@ -743,7 +803,7 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
 async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
     
     matches_league_for_date = []    
-    url                     = "https://apuestas.wplay.co/es/t/19311/Colombia-Primera-A"
+    url                     = "https://apuestas.wplay.co/es/t/19297/Brasil-Serie-A"
     request_url             = Request(url, headers={'User-Agent': 'XYZ/3.0'})
     exception_content       = None
     
@@ -753,6 +813,18 @@ async def extNextMatchesWplayByLeague(path_to_scrape: str = None):
         
         # TODO: descomentar esto
         tabla = soup.find("table")
+        
+        if tabla is not None and len(tabla) > 0:
+            print("SI EXISTEN REGISTROS ACTIVOS")
+            # tabla contains some value or records
+            # continue with your code here
+        else:
+            print("NO EXISTEN REGISTROS ACTIVOS")
+            # tabla is empty or None
+            # handle the case accordingly
+        
+        
+        
         rows = tabla.find_all('tr')
             
         for row in rows:
