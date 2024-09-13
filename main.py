@@ -33,7 +33,6 @@ import requests
 # import pandas as pd
 
 
-
 # TODO: ejemplos para experimentar con variables globales
 app = FastAPI(
     title='Web Scraping - TipsterByte',
@@ -650,7 +649,7 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
     equipos_posicion = []
 
     # URL SEMILLA
-    url = path_to_scrape if path_to_scrape != None else "https://www.fctables.com/brazil/serie-a/"
+    url = path_to_scrape if path_to_scrape != None else "https://www.fctables.com/colombia/liga-postobon/"
     # NOTE: Habilitar
     # "https://www.fctables.com/brazil/serie-a/"
     
@@ -661,8 +660,10 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
     # REQUERIMIENTO AL SERVIDOR - PARSEO DEL ARBOL CON BEAUTIFUL SOUP
     request_url = Request(url, headers=headers)
     page_url_open = urlopen(request_url).read().decode('utf8')    
-    soup = BeautifulSoup(page_url_open, 'html.parser')   
-    contenedor_equipos = soup.select('div.template_table div.table-responsiverrrr table.stage-table tbody tr')
+    soup = BeautifulSoup(page_url_open, 'html.parser')
+    
+    # TODO: Validar
+    contenedor_equipos = soup.select('div.template_table div.table-responsive table.stage-table')
     
     
     # VALIDAR EXISTENCIA
@@ -671,7 +672,12 @@ async def extPositionTableByLeagueStable(path_to_scrape: str = None):
         # Code to be executed if contenedor_equipos contains records
         # ...
         ## refactrorizar ´para el caso en que todo esté bien, dejar el código desde: 681 - 790
-        
+        # Tomar la última tabla
+        ultima_tabla = contenedor_equipos[-1]
+        contenedor_equipos = ultima_tabla.select('tbody tr')
+    
+        # Selecciona las filas de la última tabla
+        # filas_ultima_tabla = ultima_tabla.select('tbody tr')
     else:
         print("NO EXISTEN REGISTROS ACTIVOS - tabla de posiciones")
         status_code = 404

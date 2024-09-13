@@ -29,6 +29,32 @@ sudo pip3 install lxml html5lib selenium webdriver-manager
 sudo nano gunicorn_conf.py 
 sudo nano /etc/systemd/system/tipsterbyte_scraper.service
 -------------
+
+
+**********************************************************
+- contenido del fichero gunicorn_conf.py:
+**********************************************************
+# gunicorn_conf.py
+from multiprocessing import cpu_count
+
+bind = "127.0.0.1:8000"
+
+# Worker Options
+workers = cpu_count() + 1
+worker_class = 'uvicorn.workers.UvicornWorker'
+
+# Logging Options
+loglevel = 'debug'
+accesslog = '/var/www/api-scraper-tipsterbyte.memodevs.com/access_log'
+errorlog =  '/var/www/api-scraper-tipsterbyte.memodevs.com/error_log'
+-------------
+
+
+
+**********************************************************
+  contenido del fichero tipsterbyte_scraper.service:
+**********************************************************
+- en teoría:
 [Unit]
 Description=Gunicorn Daemon for FastAPI TipsterByte
 After=network.target
@@ -38,6 +64,20 @@ User=jdiaz
 Group=www-data
 WorkingDirectory=/var/www/api-scraper-tipsterbyte.memodevs.com
 ExecStart=/var/www/api-scraper-tipsterbyte.memodevs.com/env/bin/gunicorn -c gunicorn_conf.py main:app
+
+[Install]
+WantedBy=multi-user.target
+-------------
+- en producción:
+[Unit]
+Description=Gunicorn Daemon for FastAPI TipsterByte
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/api-scraper-tipsterbyte.memodevs.com
+ExecStart=/var/www/api-scraper-tipsterbyte.memodevs.com/venv/bin/gunicorn -c gunicorn_conf.py --timeout 3600  main:app
 
 [Install]
 WantedBy=multi-user.target
@@ -52,3 +92,6 @@ sudo systemctl restart gunicorn
 sudo systemctl status gunicorn
 
 sudo chmod 666 /var/www/api-scraper-tipsterbyte.memodevs.com/error_log
+
+
+git:https://github.com
