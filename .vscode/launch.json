@@ -7,7 +7,7 @@
         {"name":"Depurador de Python: FastAPI","type":"debugpy","request":"launch","module":"uvicorn","args":["main:app","--reload"],"jinja":true},
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",

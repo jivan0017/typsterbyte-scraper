@@ -82,7 +82,7 @@ ExecStart=/var/www/api-scraper-tipsterbyte.memodevs.com/venv/bin/gunicorn -c gun
 [Install]
 WantedBy=multi-user.target
 -------------
-
+ sudo systemctl stop tipsterbyte_scraper
 sudo systemctl start tipsterbyte_scraper
 sudo systemctl enable tipsterbyte_scraper
 sudo systemctl status tipsterbyte_scraper

@@ -29,3 +29,25 @@ uvicorn main:app --reload
 
 - correr la app en un puerto distinto cuando tenemos ocupado el 8080, 80:
 uvicorn main:app --port 8001 --reload
+
+
+
+
+
+
+
+
+
+instalación de librerías en el entorno virtual .env python:
+fast-api
+pip install requests-html
+
+
+- realizar solicitudes http de manera asíncrona:
+pip install aiohttp
+
+
+- saber que imports no se usan:
+pip install flake8
+- ejecutar en consola:
+flake8 main.py --select=F401

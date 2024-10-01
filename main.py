@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
 from requests_html import AsyncHTMLSession
 from bs4 import BeautifulSoup
-import json
 import numbers
 
 # miembros propios
@@ -22,7 +21,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 import platform
 
 import sys
-import requests
+# import requests
+# import aiohttp
+# import asyncio
+# from fastapi.responses import StreamingResponse
 
 # IMPORTS SIN USO: (testear para eliminar)
 # from datetime import timedelta
@@ -87,7 +89,28 @@ async def regions():
  
 def num_there(s):
     return any(i.isdigit() for i in s) 
-    
+     
+async def get_regions_spotify(url):
+    asession = AsyncHTMLSession()
+    html = await asession.get(url)
+    await html.html.arender(sleep=3)
+    soup = BeautifulSoup(html.text, "html.parser")
+    drop_down = soup.find_all("div",{"class": "responsive-select", "data-type":"country"})[2]
+    countries = {}
+    lists = drop_down.find_all("li")
+    for l in lists:
+        countries[l.text] = {
+            "tag":l.attrs.get("data-value", None),
+            "url":url + l.attrs.get("data-value", None)
+        }
+
+    return countries    
+
+async def fetch_page(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+
 async def get_calendar_data_details(url_details: str, count_fechas_partido):
     # details
     print(">>>>> MATCH DETAILLS::: ", url_details, " $$$$ contador $$$$ ", count_fechas_partido)
@@ -151,23 +174,7 @@ async def get_calendar_data_details(url_details: str, count_fechas_partido):
     page_details = None
     
     return detalles_estadisticas
-    
-    
-async def get_regions_spotify(url):
-    asession = AsyncHTMLSession()
-    html = await asession.get(url)
-    await html.html.arender(sleep=3)
-    soup = BeautifulSoup(html.text, "html.parser")
-    drop_down = soup.find_all("div",{"class": "responsive-select", "data-type":"country"})[2]
-    countries = {}
-    lists = drop_down.find_all("li")
-    for l in lists:
-        countries[l.text] = {
-            "tag":l.attrs.get("data-value", None),
-            "url":url + l.attrs.get("data-value", None)
-        }
 
-    return countries    
 
 # NOTE: método funcional activo como parte del mecacnismo
 # NOTE: METODO ACTIVO FUNCIONAL "extCalendarLeagueByLeague
@@ -183,13 +190,13 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
     
     # url = "https://www.resultados-futbol.com/premier2024/grupo1/calendario" #"https://www.resultados-futbol.com/apertura_colombia2024/grupo1/calendario"
     # url = "https://www.resultados-futbol.com/usa2024/grupo1/calendario"
-    url = "https://www.resultados-futbol.com/brasil2024/grupo1/calendario"
+    url = path_to_scrape if path_to_scrape != None else "https://www.resultados-futbol.com/brasil2024/grupo1/calendario"
     
     page0 = urlopen(url).read()
     soup0 = BeautifulSoup(page0)
     
     # adding 2 seconds time delay
-    time.sleep(2)
+    time.sleep(1)
     tabla0 = soup0.select(".col-calendar-content .boxhome.boxhome-2col")
     
     if tabla0 is not None and len(tabla0) > 0:
@@ -331,8 +338,8 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
         if len(arr_contenido_partidos) > 0:
             arr_jornadas_content.append(arr_contenido_partidos)
 
-    arr_contenido_partidos = []
-    count_fechas_calendar = count_fechas_calendar + 1
+        arr_contenido_partidos = []
+        count_fechas_calendar = count_fechas_calendar + 1
     
     # TODO: pendiente probar!
     # get_details_status = False
@@ -347,7 +354,7 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
 
     # NOTE: Si se solicitan detalles de estadísticas, se procesan y asignan:
     # NOTE: así estaba antes: if bool(get_details_status) == True:
-    if evaluar_detalles_calendario == True:
+    if evaluar_detalles_calendario:
             
             count_fechas_calendar = 0
             count_sin_detalles = 0            
@@ -379,8 +386,8 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
                         #     print("sin detalles, fecha partido: ", count_fechas_partido)
                         if not fecha['partido_procesado_status']:
                             if fecha['url_estadisticas_detalles'] != "":
-                                url = fecha['url_estadisticas_detalles']                            
-                                arr_temp = await get_calendar_data_details(str(url), count_fechas_partido)
+                                # url = fecha['url_estadisticas_detalles']                            
+                                arr_temp = await get_calendar_data_details(str(fecha['url_estadisticas_detalles']), count_fechas_partido)
                                 fecha['estadisticas_detalles'] = arr_temp
                                 fecha['partido_procesado_status'] = True
                             else: 
@@ -396,11 +403,12 @@ async def extCalendarLeagueByLeague(path_to_scrape: str = None, get_details_stat
     return {
         'success': True,
         'partidos_por_jornada': arr_jornadas_content
-    }      
+    } 
+    
 
 # NOTE: método funcional DEPRECADO! como parte del mecacnismo
 @app.get('/ext-position-table-by-league')
-async def extPositionTableByLeague(path_to_scrape: str = None):
+async def extPositionTableByLeague__Deprecated(path_to_scrape: str = None):
 
     utilidades_global = UtilitiesMontecarlo()
     exception_content = ''
