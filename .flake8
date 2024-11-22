@@ -1,0 +1,5 @@
+[flake8]
+# Eliminar la línea ignore para habilitar todas las reglas
+# O especificar solo las reglas que deseas ignorar
+; ignore = E501, W503
+ignore = E,W,F

@@ -87,6 +87,10 @@ sudo systemctl start tipsterbyte_scraper
 sudo systemctl enable tipsterbyte_scraper
 sudo systemctl status tipsterbyte_scraper
 
+
+pidstat -p $(pgrep tipsterbyte_scraper) 1
+ps aux | grep tipsterbyte_scraper
+
 sudo systemctl daemon-reload
 sudo systemctl restart gunicorn
 sudo systemctl status gunicorn
@@ -95,3 +99,9 @@ sudo chmod 666 /var/www/api-scraper-tipsterbyte.memodevs.com/error_log
 
 
 git:https://github.com
+
+
+-------------------------------------
+DIGITAL OCEAN
+
+cd /var/www/api-scraper-tipsterbyte.memodevs.com/

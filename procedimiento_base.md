@@ -51,3 +51,5 @@ pip install aiohttp
 pip install flake8
 - ejecutar en consola:
 flake8 main.py --select=F401
+
+
